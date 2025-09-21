@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Assistência Técnica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js e FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-screen">
+
+    <div id="loading-state" class="text-center text-white text-lg font-semibold">A carregar...</div>
+
+    <!-- Container de Login -->
+    <div id="login-container" class="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-8 ring-1 ring-black/5 hidden-element">
+        <div class="text-center mb-8">
+            <h1 id="form-title" class="text-3xl font-bold text-blue-700">Acesso ao Sistema</h1>
+            <p class="text-gray-500 mt-2">Use o seu email e senha para entrar.</p>
+        </div>
+        <form id="auth-form">
+            <div class="mb-4">
+                <label for="email" class="block text-sm font-medium text-gray-600 mb-2">Email</label>
+                <input type="email" id="email" name="email" required placeholder="seuemail@exemplo.com"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-600 mb-2">Senha</label>
+                <input type="password" id="password" name="password" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+            </div>
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                <strong class="font-bold">Erro:</strong>
+                <span class="block sm:inline" id="error-text"></span>
+            </div>
+            <div>
+                <button type="submit" id="submit-button" class="w-full bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-lg hover:shadow-xl">
+                    Entrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Container Principal da Aplicação -->
+    <div id="app-container" class="max-w-7xl w-full mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-6 sm:p-8 ring-1 ring-black/5 hidden-element">
+        <header class="flex flex-wrap gap-4 justify-between items-center mb-6 pb-4 border-b border-gray-200">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-700">Controle de Ordens de Serviço</h1>
+                <p id="user-greeting" class="text-gray-500 mt-1">Bem-vindo!</p>
+            </div>
+            <div class="flex items-center gap-4">
+                 <div id="main-tabs" class="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button data-tab="os" class="tab-btn active text-sm font-semibold py-2 px-4 rounded-md transition-colors">Ordens de Serviço</button>
+                    <button data-tab="dashboard" class="tab-btn text-sm font-semibold py-2 px-4 rounded-md transition-colors">Dashboard</button>
+                    <button id="admin-tab-btn" data-tab="admin" class="tab-btn text-sm font-semibold py-2 px-4 rounded-md transition-colors hidden-element">Painel ADM</button>
+                </div>
+                <button id="logout-btn" class="bg-red-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-md hover:shadow-lg">Sair</button>
+            </div>
+        </header>
+        
+        <main>
+            <!-- TAB: Ordens de Serviço -->
+            <div id="os-tab" class="tab-content">
+                <section id="form-section" class="bg-gray-50 p-6 rounded-lg mb-8 border border-gray-200">
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Nova Ordem de Serviço</h2>
+                    <form id="os-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label for="nome_cliente" class="block text-sm font-medium text-gray-600 mb-1">Nome do Cliente:</label>
+                            <input type="text" id="nome_cliente" name="nome_cliente" list="customer-suggestions" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                            <datalist id="customer-suggestions"></datalist>
+                        </div>
+                        <div><label for="contato_cliente" class="block text-sm font-medium text-gray-600 mb-1">Contato (Telefone/Email):</label><input type="text" id="contato_cliente" name="contato_cliente" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"></div>
+                        <div>
+                            <label for="tipo_equipamento" class="block text-sm font-medium text-gray-600 mb-1">Tipo de Equipamento:</label>
+                            <select id="tipo_equipamento" name="tipo_equipamento" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                                <option>Periféricos</option>
+                                <option>Desktop</option>
+                                <option>Notebook</option>
+                                <option>Tablet</option>
+                                <option>Smartphone</option>
+                                <option>Caixa de Som</option>
+                                <option>Eletrônico</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2"><label for="equipamento" class="block text-sm font-medium text-gray-600 mb-1">Descrição / Modelo do Equipamento:</label><input type="text" id="equipamento" name="equipamento" placeholder="Ex: Notebook Dell Vostro P123, iPhone 13 Pro" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"></div>
+
+                        <div class="md:col-span-2">
+                            <div class="flex justify-between items-center mb-1"><label for="defeito_relatado" class="block text-sm font-medium text-gray-600">Defeito Relatado:</label><button type="button" id="btn-diagnostico" class="text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1 rounded-full hover:bg-purple-200 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-sm hidden">✨ Sugerir Diagnóstico</button></div>
+                            <textarea id="defeito_relatado" name="defeito_relatado" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 resize-y"></textarea>
+                            <div id="diagnostico-sugestao" class="hidden mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg"></div>
+                        </div>
+                        <div class="md:col-span-2 flex justify-end"><button type="submit" class="bg-green-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-lg hover:shadow-xl">Registar Entrada</button></div>
+                    </form>
+                </section>
+                <section id="lista-os-section">
+                    <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-700">Consulta de Ordens de Serviço</h2>
+                        <div class="flex items-center gap-4">
+                             <div class="flex items-center bg-gray-100 rounded-lg"><button id="filter-abertas" class="filter-btn active text-sm font-semibold py-2 px-4 rounded-lg transition-colors">Abertas</button><button id="filter-fechadas" class="filter-btn text-sm font-semibold py-2 px-4 rounded-lg transition-colors">Fechadas</button></div>
+                            <input type="search" id="search-os" placeholder="Pesquisar por OS, cliente..." class="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto bg-gray-50/70 p-4 rounded-lg">
+                        <table id="os-table" class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-100"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">OS Nº</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipamento</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Entrada</th><th id="th-status" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th><th scope="col" class="relative px-6 py-3"><span class="sr-only">Ações</span></th></tr></thead><tbody class="bg-white divide-y divide-gray-200"></tbody></table>
+                    </div>
+                    <div id="empty-state" class="text-center p-12 text-gray-500 hidden"><svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg><h3 id="empty-state-title" class="mt-2 text-sm font-medium text-gray-900">Nenhum equipamento na assistência</h3><p class="mt-1 text-sm text-gray-500">Registe uma nova ordem de serviço acima.</p></div>
+                </section>
+            </div>
+            
+            <!-- TAB: Dashboard -->
+            <div id="dashboard-tab" class="tab-content hidden-element">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Dashboard</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md border"><h3 class="text-lg font-medium text-gray-500">Total de OS Abertas</h3><p id="dashboard-total-abertas" class="text-3xl font-bold text-blue-600 mt-2">0</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md border"><h3 class="text-lg font-medium text-gray-500">Total de OS Fechadas (Mês)</h3><p id="dashboard-total-fechadas" class="text-3xl font-bold text-green-600 mt-2">0</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md border"><h3 class="text-lg font-medium text-gray-500">Receita Mão de Obra (Mês)</h3><p id="dashboard-receita-mes" class="text-3xl font-bold text-indigo-600 mt-2">R$ 0,00</p></div>
+                </div>
+                <div class="grid grid-cols-1 gap-6">
+                     <div class="bg-white p-6 rounded-lg shadow-md border">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Calendário de Ordens de Serviço</h3>
+                        <div class="relative h-[600px]">
+                            <div id="calendar" class="absolute top-0 left-0 right-0 bottom-0"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md border">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Status das OS Abertas</h3>
+                        <div class="relative h-80"><canvas id="status-chart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Painel ADM -->
+            <div id="admin-tab" class="tab-content hidden-element">
+                 <h2 class="text-2xl font-semibold text-gray-700 mb-4">Painel Administrativo</h2>
+                 <div class="space-y-8">
+                     <!-- Gestão de Clientes -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-700">Gestão de Clientes</h3>
+                            <button id="btn-novo-cliente" class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 text-sm transition-colors">Novo Cliente</button>
+                        </div>
+                        <form id="form-novo-cliente" class="bg-gray-50 border rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" id="novo-cliente-nome" placeholder="Nome do Cliente" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <input type="text" id="novo-cliente-contato" placeholder="Contato" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <div class="md:col-span-2"><input type="text" id="novo-cliente-endereco" placeholder="Endereço (Opcional)" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                            <div class="md:col-span-2 flex justify-end"><button type="submit" class="bg-green-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-green-700">Salvar Cliente</button></div>
+                        </form>
+                        <div id="customers-list" class="mt-4 space-y-3 max-h-96 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Gestão de Técnicos -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-gray-700">Gestão de Técnicos</h3>
+                             <button id="btn-novo-tecnico" class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 text-sm transition-colors">Novo Técnico</button>
+                        </div>
+                         <form id="form-novo-tecnico" class="bg-gray-50 border rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" id="novo-tecnico-nome" placeholder="Nome do Técnico" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <input type="email" id="novo-tecnico-email" placeholder="Email de Acesso" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                             <input type="text" id="novo-tecnico-telefone" placeholder="Telefone" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                             <input type="text" id="novo-tecnico-cpf" placeholder="CPF" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <div class="md:col-span-2"><input type="password" id="novo-tecnico-senha" placeholder="Senha (mínimo 6 caracteres)" required class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>
+                            <div class="md:col-span-2 flex justify-end"><button type="submit" class="bg-green-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-green-700">Salvar Técnico</button></div>
+                        </form>
+                        <div id="finalizar-cadastro-tecnico" class="hidden-element mt-4 p-4 bg-yellow-50 border-yellow-200 rounded-lg">
+                            <p class="font-bold">Ação Manual Necessária</p>
+                            <p class="text-sm">Copie os dados abaixo e crie o utilizador na <a href="https://console.firebase.google.com/" target="_blank" class="text-blue-600 hover:underline">Consola do Firebase</a>.</p>
+                            <div class="mt-2 text-sm space-y-1"><p><strong>Email:</strong> <code id="finalize-email" class="bg-gray-200 p-1 rounded"></code></p><p><strong>Senha:</strong> <code id="finalize-password" class="bg-gray-200 p-1 rounded"></code></p></div>
+                            <div class="mt-4"><label for="finalize-uid" class="block text-sm font-medium text-gray-700">Cole o UID do utilizador aqui:</label><input type="text" id="finalize-uid" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md" placeholder="UID copiado do Firebase"><button type="button" id="btn-finalizar-cadastro" class="w-full mt-2 bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700">Finalizar Cadastro</button></div>
+                        </div>
+                        <div id="technicians-list" class="mt-4 space-y-3"></div>
+                    </div>
+
+                    <!-- Gestão de Chamados e Relatórios -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Gestão de Chamados</h3>
+                            <div class="overflow-x-auto bg-gray-50/70 p-4 rounded-lg border max-h-96">
+                                <table id="admin-os-table" class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-100"><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">OS</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Técnico Responsável</th></tr></thead><tbody id="admin-os-tbody" class="bg-white divide-y divide-gray-200"></tbody></table>
+                            </div>
+                        </div>
+                        <div>
+                             <h3 class="text-xl font-semibold text-gray-700 mb-4">Relatórios</h3>
+                            <button id="btn-gerar-relatorio" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors shadow-md">Gerar Relatório Semanal</button>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals (Detalhes e Relatório) -->
+    <div id="details-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-content bg-white w-full max-w-2xl rounded-lg shadow-2xl p-8 transform -translate-y-10">
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Detalhes da OS Nº <span id="modal-os-id"></span></h2>
+                <button id="modal-close-btn" class="text-gray-500 hover:text-red-600 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div id="modal-content-main">
+                <form id="modal-form">
+                    <input type="hidden" id="modal-os-hidden-id">
+                    <div class="mb-4"><label for="modal-tecnico-responsavel" class="block text-sm font-medium text-gray-600">Técnico Responsável:</label><select id="modal-tecnico-responsavel" class="mt-1 w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-blue-500 focus:border-blue-500"></select></div>
+                    <div class="mb-4"><label for="modal-status-select" class="block text-sm font-medium text-gray-600">Status Atual:</label><select id="modal-status-select" class="mt-1 w-full p-2 border border-gray-300 rounded-md text-lg font-semibold text-blue-700 bg-white focus:ring-blue-500 focus:border-blue-500"></select></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                           <div class="flex justify-between items-center"><label class="block text-sm font-medium text-gray-600">Peças Utilizadas:</label><button type="button" id="btn-add-peca" class="text-xs bg-blue-100 text-blue-700 font-semibold px-3 py-1 rounded-full hover:bg-blue-200 transition-colors">+</button></div>
+                           <div id="pecas-list" class="mt-1 space-y-2 max-h-24 overflow-y-auto pr-2"></div>
+                           <div class="mt-2 pt-2 border-t"><label class="block text-sm font-medium text-gray-500">Total Peças:</label><input type="text" id="modal-total-pecas" class="mt-1 w-full px-3 py-2 border-gray-200 bg-gray-100 rounded-md" readonly></div>
+                        </div>
+                        <div>
+                           <label class="block text-sm font-medium text-gray-600">Valor Mão de Obra (R$):</label>
+                           <input type="number" id="modal-mao_de_obra" step="0.01" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md">
+                           <div class="mt-2 pt-2 border-t"><label class="block text-sm font-medium text-gray-500">Comissão (35%):</label><input type="text" id="modal-comissao" class="mt-1 w-full px-3 py-2 border-gray-200 bg-gray-100 rounded-md" readonly></div>
+                        </div>
+                    </div>
+                     <div class="mb-4 p-4 bg-gray-100 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-600">Valor Total (Peças + Mão de Obra):</label>
+                        <input type="text" id="modal-valor-total" class="mt-1 w-full px-3 py-2 border-gray-200 bg-white rounded-md text-lg font-bold text-green-600" readonly>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-1"><label for="modal-servico_executado" class="block text-sm font-medium text-gray-600">Serviço Executado / Análise Técnica:</label><div class="flex space-x-2"><button type="button" id="btn-gerar-resumo" class="text-xs bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full hover:bg-green-200 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-sm">✨ Gerar Resumo p/ Cliente</button><button type="button" id="btn-gerar-laudo" class="text-xs bg-purple-100 text-purple-700 font-semibold px-3 py-1 rounded-full hover:bg-purple-200 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-sm">✨ Gerar Laudo</button></div></div>
+                        <textarea id="modal-servico_executado" rows="4" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"></textarea><div id="resumo-cliente" class="hidden mt-3 p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-gray-700"></div>
+                    </div>
+                    <div class="flex items-center justify-between bg-gray-50 p-4 rounded-md"><button type="submit" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-lg hover:shadow-xl">Salvar Alterações</button><div class="flex space-x-2"><button type="button" id="btn-comprovante-entrada" class="bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 text-sm transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-md hover:shadow-lg">Comprovativo Entrada</button><button type="button" id="btn-laudo" class="bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 text-sm transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-md hover:shadow-lg">Imprimir Laudo</button></div></div>
+                </form>
+                <div class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700 mb-3">Finalizar Ordem de Serviço</h3><div class="flex gap-4"><button type="button" id="btn-fechar-com-reparo" class="flex-1 bg-green-500 text-white font-semibold p-3 rounded-lg hover:bg-green-600 transition-colors shadow-md">Entregue com Reparo</button><button type="button" id="btn-fechar-sem-reparo" class="flex-1 bg-yellow-500 text-white font-semibold p-3 rounded-lg hover:bg-yellow-600 transition-colors shadow-md">Entregue sem Reparo</button></div></div>
+                <div class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700 mb-3">Comunicação com Cliente</h3><div class="bg-gray-50 p-4 rounded-lg"><button type="button" id="btn-gerar-mensagem" class="w-full bg-cyan-500 text-white font-semibold px-5 py-2 rounded-lg hover:bg-cyan-600 transition-all duration-200 ease-in-out transform hover:-translate-y-px active:scale-95 shadow-lg hover:shadow-xl">✨ Gerar Mensagem de Status</button><div id="mensagem-status-container" class="hidden mt-3"><textarea id="mensagem-status-texto" rows="3" class="w-full text-sm p-2 border border-gray-300 rounded-md bg-white" readonly></textarea><button type="button" id="btn-copiar-mensagem" class="text-xs mt-2 w-full bg-gray-200 text-gray-700 font-semibold py-1 rounded-md hover:bg-gray-300 transition-colors">Copiar Mensagem</button></div></div></div>
+            </div>
+            <div id="modal-content-closed" class="hidden"><p class="text-lg text-center text-gray-700">Esta ordem de serviço foi fechada.</p><p class="text-center text-gray-500 mt-2"><strong>Status Final:</strong> <span id="closed-status-final"></span></p><p class="text-center text-gray-500 mt-1"><strong>Data de Saída:</strong> <span id="closed-data-saida"></span></p><div class="flex justify-center mt-6 space-x-2"><button type="button" id="btn-laudo-fechado" class="bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 text-sm">Imprimir Laudo</button><button type="button" id="btn-reabrir-os" class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-600 text-sm">Reabrir OS</button></div></div>
+        </div>
+    </div>
+    <div id="report-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-content bg-white w-full max-w-3xl rounded-lg shadow-2xl transform -translate-y-10">
+            <div class="flex justify-between items-start p-6 border-b"><h2 class="text-2xl font-bold text-gray-800">Relatório Semanal</h2><button id="report-close-btn" class="text-gray-500 hover:text-red-600 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+            <div id="report-content" class="p-8"></div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end"><button id="btn-print-report" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-indigo-700">Imprimir</button></div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
+
