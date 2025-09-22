@@ -15,9 +15,9 @@ export async function callGeminiApi(prompt, button) {
     button.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" role="status" aria-label="loading"></span> Gerando...`;
     
     // ATENÇÃO: Cole a sua chave da API do Gemini aqui
-    const apiKey = "AIzaSyA152sfEvUOvjkUnP0tgsp-WgYLwLesAJw"; 
+    const apiKey = ""; 
     
-    if (apiKey === "AIzaSyA152sfEvUOvjkUnP0tgsp-WgYLwLesAJw") {
+    if (apiKey === "") {
         alert("Por favor, adicione a sua chave de API do Gemini no ficheiro js/utils.js");
         button.disabled = false;
         button.innerHTML = originalButtonText;
